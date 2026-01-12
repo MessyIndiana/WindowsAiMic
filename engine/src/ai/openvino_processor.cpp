@@ -11,6 +11,10 @@
 #include <algorithm>
 #include <iostream>
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 // Uncomment when OpenVINO is available:
 // #include <openvino/openvino.hpp>
 
