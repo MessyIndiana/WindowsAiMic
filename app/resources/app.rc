@@ -1,8 +1,8 @@
 // WindowsAiMic Application Resource File
 #include <windows.h>
 
-// Application icon
-IDI_APPICON ICON "icon.ico"
+// Application icon (uncomment when icon.ico is added)
+// IDI_APPICON ICON "icon.ico"
 
 // Version information
 VS_VERSION_INFO VERSIONINFO
