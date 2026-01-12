@@ -1,0 +1,57 @@
+# Ignore build directories
+build/
+out/
+cmake-build-*/
+.vs/
+x64/
+x86/
+Debug/
+Release/
+
+# IDE files
+*.user
+*.suo
+*.sln.docstates
+.idea/
+*.swp
+*.swo
+*~
+
+# Compiled files
+*.obj
+*.o
+*.a
+*.lib
+*.dll
+*.exe
+*.pdb
+*.ilk
+*.exp
+*.sys
+*.cat
+
+# Dependencies
+engine/libs/rnnoise/src/
+engine/libs/rnnoise/include/rnnoise.h.bak
+node_modules/
+
+# Config files (user-specific)
+config/config.json
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Package files
+*.msi
+*.cab
+*.wixpdb
+*.wixobj
+
+# Certificates (do not commit!)
+*.pfx
+*.cer
+*.p12

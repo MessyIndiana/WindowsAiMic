@@ -1,0 +1,97 @@
+; WindowsAiMic Virtual Audio Driver INF File
+; This is a template - the actual driver files need to be built with WDK
+
+[Version]
+Signature   = "$WINDOWS NT$"
+Class       = MEDIA
+ClassGUID   = {4d36e96c-e325-11ce-bfc1-08002be10318}
+Provider    = %ProviderName%
+DriverVer   = 01/01/2026,1.0.0.0
+CatalogFile = WindowsAiMicDriver.cat
+PnpLockDown = 1
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+WindowsAiMicDriver.sys = 1
+
+[DestinationDirs]
+DefaultDestDir = 12  ; DIRID_DRIVERS
+
+[Manufacturer]
+%MfgName% = DeviceList,NTamd64
+
+[DeviceList.NTamd64]
+%DeviceDesc% = WindowsAiMic.Install, ROOT\WindowsAiMicDriver
+
+; =================== Installation ===================
+
+[WindowsAiMic.Install]
+Include = ks.inf,wdmaudio.inf
+Needs = KS.Registration, WDMAUDIO.Registration
+CopyFiles = WindowsAiMic.CopyFiles
+AddReg = WindowsAiMic.AddReg
+
+[WindowsAiMic.CopyFiles]
+WindowsAiMicDriver.sys
+
+[WindowsAiMic.AddReg]
+; Device interface
+HKR,,AssociatedFilters,,"wdmaud,swmidi,redbook"
+HKR,,Driver,,WindowsAiMicDriver.sys
+
+; Friendly name
+HKR,,FriendlyName,,%DeviceDesc%
+
+; =================== Interfaces ===================
+
+[WindowsAiMic.Install.Interfaces]
+AddInterface = %KSCATEGORY_AUDIO%,%KSNAME_VirtualMic%,WindowsAiMic.Interface.VirtualMic
+AddInterface = %KSCATEGORY_RENDER%,%KSNAME_VirtualSpeaker%,WindowsAiMic.Interface.VirtualSpeaker
+AddInterface = %KSCATEGORY_CAPTURE%,%KSNAME_VirtualMic%,WindowsAiMic.Interface.VirtualMic
+
+[WindowsAiMic.Interface.VirtualMic]
+AddReg = WindowsAiMic.Interface.VirtualMic.AddReg
+
+[WindowsAiMic.Interface.VirtualMic.AddReg]
+HKR,,FriendlyName,,%VirtualMicName%
+HKR,,CLSID,,%Proxy.CLSID%
+
+[WindowsAiMic.Interface.VirtualSpeaker]
+AddReg = WindowsAiMic.Interface.VirtualSpeaker.AddReg
+
+[WindowsAiMic.Interface.VirtualSpeaker.AddReg]
+HKR,,FriendlyName,,%VirtualSpeakerName%
+HKR,,CLSID,,%Proxy.CLSID%
+
+; =================== Services ===================
+
+[WindowsAiMic.Install.Services]
+AddService = WindowsAiMicDriver,0x00000002,WindowsAiMic.ServiceInstall
+
+[WindowsAiMic.ServiceInstall]
+DisplayName   = %ServiceName%
+ServiceType   = 1  ; SERVICE_KERNEL_DRIVER
+StartType     = 3  ; SERVICE_DEMAND_START
+ErrorControl  = 1  ; SERVICE_ERROR_NORMAL
+ServiceBinary = %12%\WindowsAiMicDriver.sys
+
+; =================== Strings ===================
+
+[Strings]
+ProviderName      = "WindowsAiMic"
+MfgName           = "WindowsAiMic Project"
+DiskName          = "WindowsAiMic Virtual Audio Driver Disk"
+DeviceDesc        = "WindowsAiMic Virtual Audio Device"
+ServiceName       = "WindowsAiMic Virtual Audio Driver"
+VirtualMicName    = "Virtual Mic Driver"
+VirtualSpeakerName= "Virtual Speaker"
+
+; GUIDs
+KSCATEGORY_AUDIO  = "{6994AD04-93EF-11D0-A3CC-00A0C9223196}"
+KSCATEGORY_RENDER = "{65E8773E-8F56-11D0-A3B9-00A0C9223196}"
+KSCATEGORY_CAPTURE= "{65E8773D-8F56-11D0-A3B9-00A0C9223196}"
+KSNAME_VirtualMic = "VirtualMic"
+KSNAME_VirtualSpeaker = "VirtualSpeaker"
+Proxy.CLSID       = "{17CCA71B-ECD7-11D0-B908-00A0C9223196}"

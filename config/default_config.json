@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "devices": {
+    "inputDevice": "",
+    "outputDevice": ""
+  },
+  "aiModel": "rnnoise",
+  "aiSettings": {
+    "rnnoise": {
+      "attenuation": -30
+    },
+    "deepfilter": {
+      "modelPath": "",
+      "strength": 0.8
+    }
+  },
+  "expander": {
+    "enabled": true,
+    "threshold": -40,
+    "ratio": 2.0,
+    "attack": 5,
+    "release": 100,
+    "hysteresis": 3
+  },
+  "compressor": {
+    "enabled": true,
+    "threshold": -18,
+    "ratio": 4.0,
+    "knee": 6,
+    "attack": 10,
+    "release": 100,
+    "makeupGain": 6
+  },
+  "limiter": {
+    "enabled": true,
+    "ceiling": -1,
+    "release": 50,
+    "lookahead": 5
+  },
+  "equalizer": {
+    "enabled": true,
+    "highPass": {
+      "freq": 80,
+      "q": 0.7
+    },
+    "lowShelf": {
+      "freq": 200,
+      "gain": 0
+    },
+    "presence": {
+      "freq": 3000,
+      "gain": 2,
+      "q": 1.0
+    },
+    "highShelf": {
+      "freq": 8000,
+      "gain": 1
+    },
+    "deEsser": {
+      "freq": 6000,
+      "threshold": -20
+    },
+    "deEsserEnabled": false
+  },
+  "activePreset": "podcast"
+}

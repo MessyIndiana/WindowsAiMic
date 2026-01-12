@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    
+    <!-- Product definition -->
+    <Product Id="*" 
+             Name="WindowsAiMic" 
+             Language="1033" 
+             Version="1.0.0.0" 
+             Manufacturer="WindowsAiMic"
+             UpgradeCode="YOUR-UPGRADE-GUID-HERE">
+        
+        <Package InstallerVersion="500" 
+                 Compressed="yes" 
+                 InstallScope="perMachine"
+                 Description="AI-Powered Virtual Microphone Enhancement"
+                 Comments="WindowsAiMic Installer"/>
+        
+        <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed."/>
+        
+        <MediaTemplate EmbedCab="yes"/>
+        
+        <!-- Properties -->
+        <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER"/>
+        
+        <!-- Features -->
+        <Feature Id="ProductFeature" Title="WindowsAiMic" Level="1">
+            <ComponentGroupRef Id="ProductComponents"/>
+            <ComponentGroupRef Id="DriverComponents"/>
+            <ComponentGroupRef Id="StartupTask"/>
+        </Feature>
+        
+        <!-- Directory structure -->
+        <Directory Id="TARGETDIR" Name="SourceDir">
+            <Directory Id="ProgramFiles64Folder">
+                <Directory Id="INSTALLFOLDER" Name="WindowsAiMic">
+                    <Directory Id="DriversFolder" Name="drivers"/>
+                    <Directory Id="ConfigFolder" Name="config"/>
+                </Directory>
+            </Directory>
+            <Directory Id="ProgramMenuFolder">
+                <Directory Id="ApplicationProgramsFolder" Name="WindowsAiMic"/>
+            </Directory>
+        </Directory>
+        
+        <!-- Main application components -->
+        <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+            <Component Id="EngineExecutable" Guid="YOUR-GUID-1">
+                <File Id="WindowsAiMicEngine.exe" 
+                      Source="$(var.BuildDir)\bin\WindowsAiMicEngine.exe" 
+                      KeyPath="yes"/>
+            </Component>
+            
+            <Component Id="TrayApplication" Guid="YOUR-GUID-2">
+                <File Id="WindowsAiMicApp.exe" 
+                      Source="$(var.BuildDir)\bin\WindowsAiMicApp.exe" 
+                      KeyPath="yes"/>
+            </Component>
+            
+            <Component Id="ConfigFile" Guid="YOUR-GUID-3" Directory="ConfigFolder">
+                <File Id="config.json" 
+                      Source="$(var.SourceDir)\config\default_config.json" 
+                      Name="config.json"
+                      KeyPath="yes"/>
+            </Component>
+        </ComponentGroup>
+        
+        <!-- Virtual audio driver components -->
+        <ComponentGroup Id="DriverComponents" Directory="DriversFolder">
+            <Component Id="VirtualAudioDriver" Guid="YOUR-GUID-4">
+                <File Id="VirtualAudioDriver.inf" 
+                      Source="$(var.SourceDir)\driver\VirtualAudioDriver.inf" 
+                      KeyPath="yes"/>
+                <File Id="VirtualAudioDriver.sys" 
+                      Source="$(var.SourceDir)\driver\VirtualAudioDriver.sys"/>
+                <File Id="VirtualAudioDriver.cat" 
+                      Source="$(var.SourceDir)\driver\VirtualAudioDriver.cat"/>
+            </Component>
+        </ComponentGroup>
+        
+        <!-- Scheduled task for autostart -->
+        <ComponentGroup Id="StartupTask" Directory="INSTALLFOLDER">
+            <Component Id="AutostartTask" Guid="YOUR-GUID-5">
+                <RegistryValue Root="HKCU" 
+                               Key="Software\WindowsAiMic" 
+                               Name="Installed" 
+                               Type="integer" 
+                               Value="1" 
+                               KeyPath="yes"/>
+            </Component>
+        </ComponentGroup>
+        
+        <!-- Start menu shortcuts -->
+        <DirectoryRef Id="ApplicationProgramsFolder">
+            <Component Id="ApplicationShortcut" Guid="YOUR-GUID-6">
+                <Shortcut Id="TrayAppShortcut"
+                          Name="WindowsAiMic"
+                          Description="AI-Powered Virtual Microphone"
+                          Target="[INSTALLFOLDER]WindowsAiMicApp.exe"
+                          WorkingDirectory="INSTALLFOLDER"/>
+                <RemoveFolder Id="CleanUpShortcut" Directory="ApplicationProgramsFolder" On="uninstall"/>
+                <RegistryValue Root="HKCU" Key="Software\WindowsAiMic" Name="ShortcutInstalled" Type="integer" Value="1" KeyPath="yes"/>
+            </Component>
+        </DirectoryRef>
+        
+        <!-- Custom actions for driver installation -->
+        <CustomAction Id="InstallDriver" 
+                      Directory="DriversFolder"
+                      ExeCommand="pnputil /add-driver VirtualAudioDriver.inf /install"
+                      Execute="deferred"
+                      Impersonate="no"
+                      Return="check"/>
+        
+        <CustomAction Id="UninstallDriver"
+                      Directory="DriversFolder"  
+                      ExeCommand="pnputil /delete-driver VirtualAudioDriver.inf /uninstall"
+                      Execute="deferred"
+                      Impersonate="no"
+                      Return="ignore"/>
+        
+        <CustomAction Id="CreateScheduledTask"
+                      Directory="INSTALLFOLDER"
+                      ExeCommand='schtasks /create /tn "WindowsAiMic" /tr "[INSTALLFOLDER]WindowsAiMicEngine.exe --background" /sc onlogon /rl highest /f'
+                      Execute="deferred"
+                      Impersonate="no"
+                      Return="check"/>
+        
+        <CustomAction Id="DeleteScheduledTask"
+                      Directory="INSTALLFOLDER"
+                      ExeCommand='schtasks /delete /tn "WindowsAiMic" /f'
+                      Execute="deferred"
+                      Impersonate="no"
+                      Return="ignore"/>
+        
+        <!-- Install sequence -->
+        <InstallExecuteSequence>
+            <Custom Action="InstallDriver" Before="InstallFinalize">
+                NOT REMOVE
+            </Custom>
+            <Custom Action="CreateScheduledTask" After="InstallDriver">
+                NOT REMOVE
+            </Custom>
+            <Custom Action="DeleteScheduledTask" Before="RemoveFiles">
+                REMOVE
+            </Custom>
+            <Custom Action="UninstallDriver" After="DeleteScheduledTask">
+                REMOVE
+            </Custom>
+        </InstallExecuteSequence>
+        
+        <!-- UI -->
+        <UIRef Id="WixUI_InstallDir"/>
+        <WixVariable Id="WixUILicenseRtf" Value="$(var.SourceDir)\LICENSE.rtf"/>
+        
+    </Product>
+</Wix>

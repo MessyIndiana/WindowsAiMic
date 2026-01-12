@@ -1,0 +1,130 @@
+name: Build WindowsAiMic
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup CMake
+      uses: lukka/get-cmake@latest
+      
+    - name: Setup Visual Studio
+      uses: microsoft/setup-msbuild@v2
+      
+    - name: Clone RNNoise
+      run: |
+        cd engine/libs
+        if (Test-Path rnnoise) { Remove-Item rnnoise -Recurse -Force }
+        git clone https://github.com/xiph/rnnoise.git rnnoise_temp
+        New-Item -ItemType Directory -Path rnnoise/src -Force | Out-Null
+        New-Item -ItemType Directory -Path rnnoise/include -Force | Out-Null
+        Copy-Item rnnoise_temp/src/* rnnoise/src/ -Force
+        Copy-Item rnnoise_temp/include/* rnnoise/include/ -Force
+        Remove-Item rnnoise_temp -Recurse -Force
+      shell: pwsh
+      
+    - name: Configure CMake
+      run: |
+        cmake -B build -G "Visual Studio 17 2022" -A x64 `
+          -DCMAKE_BUILD_TYPE=Release `
+          -DBUILD_ENGINE=ON `
+          -DBUILD_APP=ON `
+          -DENABLE_AVX2=ON
+      shell: pwsh
+      
+    - name: Build
+      run: cmake --build build --config Release --parallel
+      
+    - name: Create Package
+      run: |
+        # Create distribution directory
+        New-Item -ItemType Directory -Path dist/WindowsAiMic -Force | Out-Null
+        New-Item -ItemType Directory -Path dist/WindowsAiMic/drivers -Force | Out-Null
+        New-Item -ItemType Directory -Path dist/WindowsAiMic/config -Force | Out-Null
+        
+        # Copy executables
+        Copy-Item build/bin/Release/*.exe dist/WindowsAiMic/ -ErrorAction SilentlyContinue
+        Copy-Item build/engine/Release/*.exe dist/WindowsAiMic/ -ErrorAction SilentlyContinue
+        Copy-Item build/app/Release/*.exe dist/WindowsAiMic/ -ErrorAction SilentlyContinue
+        
+        # Copy config
+        Copy-Item config/default_config.json dist/WindowsAiMic/config/
+        
+        # Copy installer script
+        Copy-Item scripts/install.ps1 dist/WindowsAiMic/
+        
+        # Create Install.bat
+        @"
+@echo off
+echo ============================================
+echo    WindowsAiMic One-Click Installer
+echo ============================================
+echo.
+echo This will install WindowsAiMic on your system.
+echo Administrator privileges are required.
+echo.
+pause
+powershell -ExecutionPolicy Bypass -File "%~dp0install.ps1"
+pause
+"@ | Out-File -FilePath dist/WindowsAiMic/Install.bat -Encoding ASCII
+        
+        # Create Uninstall.bat
+        @"
+@echo off
+echo Uninstalling WindowsAiMic...
+powershell -ExecutionPolicy Bypass -File "%~dp0install.ps1" -Uninstall
+pause
+"@ | Out-File -FilePath dist/WindowsAiMic/Uninstall.bat -Encoding ASCII
+        
+        # Create README
+        @"
+WindowsAiMic - AI-Powered Virtual Microphone
+=============================================
+
+INSTALLATION (Fresh Windows - No Build Tools Needed):
+1. Right-click Install.bat -> Run as Administrator
+2. Follow prompts (will enable test signing if needed)
+3. Reboot if prompted
+4. Done! Look for tray icon.
+
+USAGE:
+- Right-click tray icon for settings
+- In your apps, select "Virtual Mic Driver" as input
+
+UNINSTALL:
+- Right-click Uninstall.bat -> Run as Administrator
+
+NOTE: This uses test signing mode, which shows a
+watermark on your desktop. This is normal for
+personal/development use.
+"@ | Out-File -FilePath dist/WindowsAiMic/README.txt -Encoding ASCII
+      shell: pwsh
+      
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: WindowsAiMic-Release
+        path: dist/WindowsAiMic/
+        
+    - name: Create Release ZIP
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        Compress-Archive -Path dist/WindowsAiMic/* -DestinationPath WindowsAiMic-Release.zip
+      shell: pwsh
+      
+    - name: Upload Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: WindowsAiMic-Release.zip
